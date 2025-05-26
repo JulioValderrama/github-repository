@@ -1,0 +1,230 @@
+version: '3.8'
+
+services:
+  # -------------------------------------
+  # Traefik
+  # -------------------------------------
+  traefik:
+    image: "traefik:v2.10"
+    container_name: "traefik"
+    restart: always
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=pablo@ideasforge.io"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - traefik
+
+  # -------------------------------------
+  # Redis (Queue backend)
+  # -------------------------------------
+  redis:
+    image: redis:6
+    container_name: "redis-n8n"
+    restart: always
+    networks:
+      - traefik
+
+  # -------------------------------------
+  # Postgres (solo para n8n)
+  # -------------------------------------
+  postgres:
+    image: postgres:14.9
+    container_name: "postgres-n8n"
+    restart: always
+    environment:
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=n8n
+      - POSTGRES_DB=n8n
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - traefik
+    command: >
+      postgres
+      -c max_connections=200
+      -c idle_in_transaction_session_timeout=300000     # 5 min
+      -c idle_session_timeout=300000                    # 5 min
+
+  # -------------------------------------
+  # Postgres extras (hilos de chat, etc.)
+  # -------------------------------------
+  postgres-chat:
+    image: postgres:14.9
+    container_name: "postgres-extras"
+    restart: always
+    environment:
+      - POSTGRES_USER=chat
+      - POSTGRES_PASSWORD=chat
+      - POSTGRES_DB=chatdb
+    volumes:
+      - ./postgres-extras-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - traefik
+
+  # -------------------------------------
+  # n8n-main (UI + Webhooks, no ejecuta)
+  # -------------------------------------
+  n8n-main:
+    image: n8nio/n8n:latest
+    user: "node"
+    container_name: "n8n-main"
+    restart: always
+    depends_on:
+      - traefik
+      - postgres
+      - redis
+    expose:
+      - "5678"
+    volumes:
+      - ./data:/home/node/.n8n
+    environment:
+      - N8N_ENCRYPTION_KEY=jcznczS7Jahpx1cUQqRetumDXu4rIKy8
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=pablo@ideasforge.io
+      - N8N_BASIC_AUTH_PASSWORD=45jk45ddh2h
+      - N8N_HOST=pruebagit.xyz
+      - WEBHOOK_TUNNEL_URL=https://pruebagit.xyz
+      - WEBHOOK_URL=https://pruebagit.xyz
+      - VUE_APP_URL_BASE_API=https://pruebagit.xyz/
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+      - DB_POSTGRESDB_DATABASE=n8n
+      - N8N_PROXY_HOPS=1
+      # --- Queue Mode ---
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`pruebagit.xyz`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=myresolver"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+    networks:
+      - traefik
+
+  # -------------------------------------
+  # n8n-worker (Worker #1)
+  # -------------------------------------
+  n8n-worker:
+    image: n8nio/n8n:latest
+    container_name: "n8n-worker"
+    user: "node"
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+    expose:
+      - "5678"
+    environment:
+      - N8N_ENCRYPTION_KEY=jcznczS7Jahpx1cUQqRetumDXu4rIKy8
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+      - DB_POSTGRESDB_DATABASE=n8n
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - N8N_PROXY_HOPS=1
+    volumes:
+      - ./data:/home/node/.n8n
+    entrypoint: ["n8n", "worker"]
+    networks:
+      - traefik
+
+  # -------------------------------------
+  # n8n-worker-2 (Worker #2)
+  # -------------------------------------
+  n8n-worker-2:
+    image: n8nio/n8n:latest
+    container_name: "n8n-worker-2"
+    user: "node"
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+    expose:
+      - "5678"
+    environment:
+      - N8N_ENCRYPTION_KEY=jcznczS7Jahpx1cUQqRetumDXu4rIKy8
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+      - DB_POSTGRESDB_DATABASE=n8n
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - N8N_PROXY_HOPS=1
+    volumes:
+      - ./data:/home/node/.n8n
+    entrypoint: ["n8n", "worker"]
+    networks:
+      - traefik
+
+  # -------------------------------------
+  # n8n-worker-3 (Worker #3)
+  # -------------------------------------
+  n8n-worker-3:
+    image: n8nio/n8n:latest
+    container_name: "n8n-worker-3"
+    user: "node"
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+    expose:
+      - "5678"
+    environment:
+      - N8N_ENCRYPTION_KEY=jcznczS7Jahpx1cUQqRetumDXu4rIKy8
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+      - DB_POSTGRESDB_DATABASE=n8n
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - N8N_PROXY_HOPS=1
+    volumes:
+      - ./data:/home/node/.n8n
+    entrypoint: ["n8n", "worker"]
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true
+
+

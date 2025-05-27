@@ -1,4 +1,4 @@
-# 🚀 Proyecto n8n Autoalojado (Docker + Backup Automático + GitHub)
+# Proyecto n8n Autoalojado (Docker + Backup Automático + GitHub)
 
 Repositorio profesional para desplegar, mantener y versionar una instancia de **n8n** autoalojada usando Docker Compose, backups automáticos de workflows y control de versiones con Git y GitHub.
 

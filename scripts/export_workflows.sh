@@ -16,3 +16,8 @@ docker exec n8n-main n8n export:workflow --all --output="/home/node/exported_wor
 # Copia desde el volumen del contenedor a la carpeta del host
 docker cp n8n-main:/home/node/exported_workflows/. $WORKFLOW_DIR/
 
+# Añade y commitea
+git add workflows
+git commit -m "Backup workflows $TIMESTAMP"
+
+echo "✅ Backup de workflows exportado, copiado y versionado en Git correctamente: $WORKFLOW_DIR/export_${TIMESTAMP}.json"

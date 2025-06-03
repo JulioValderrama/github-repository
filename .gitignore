@@ -3,3 +3,6 @@ postgres-data/
 postgres-extras-data/
 data/
 letsencrypt/
+.venv
+__pycache__/
+*.pyc

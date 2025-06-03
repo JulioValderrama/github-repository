@@ -1,2 +1,32 @@
 User settings loaded from: /home/node/.n8n/config
 Successfully exported 1 workflow.
+User settings loaded from: /home/node/.n8n/config
+Successfully exported 1 workflow.
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+✅ Backup de workflows exportado, copiado y versionado en Git correctamente: /opt/n8n/workflows/export_20250529_033001.json
+User settings loaded from: /home/node/.n8n/config
+Successfully exported 1 workflow.
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+✅ Backup de workflows exportado, copiado y versionado en Git correctamente: /opt/n8n/workflows/export_20250530_033001.json
+User settings loaded from: /home/node/.n8n/config
+Successfully exported 1 workflow.
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+✅ Backup de workflows exportado, copiado y versionado en Git correctamente: /opt/n8n/workflows/export_20250531_033001.json
+User settings loaded from: /home/node/.n8n/config
+Successfully exported 1 workflow.
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+✅ Backup de workflows exportado, copiado y versionado en Git correctamente: /opt/n8n/workflows/export_20250601_033001.json
+User settings loaded from: /home/node/.n8n/config
+Successfully exported 1 workflow.
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+✅ Backup de workflows exportado, copiado y versionado en Git correctamente: /opt/n8n/workflows/export_20250602_033001.json
+User settings loaded from: /home/node/.n8n/config
+Successfully exported 1 workflow.
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+✅ Backup de workflows exportado, copiado y versionado en Git correctamente: /opt/n8n/workflows/export_20250603_033002.json

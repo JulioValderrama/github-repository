@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 # === 1. Cargar variables del entorno ===
-load_dotenv()  # Busca .env en el mismo directorio
+load_dotenv(dotenv_path="/opt/n8n/.env")  # Busca .env en el mismo directorio
 
 # === 2. Configuración vía entorno ===
 AGENT_WEBHOOK_URL = os.environ["AGENT_WEBHOOK_URL"]

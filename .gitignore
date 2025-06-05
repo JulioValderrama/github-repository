@@ -6,3 +6,4 @@ letsencrypt/
 .venv
 __pycache__/
 *.pyc
+postgres-test-data/
